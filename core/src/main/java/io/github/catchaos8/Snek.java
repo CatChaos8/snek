@@ -1,13 +1,14 @@
 package io.github.catchaos8;
 
-import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 
-import java.util.Arrays;
-import java.util.Random;
+import java.util.*;
 
 public class Snek {
+    Deque<Vector2> snakeParts = new LinkedList<>();
+
+    public boolean arrayCounting = false;
 
     //Make random obj
     private final Random random = new Random();
@@ -63,17 +64,33 @@ public class Snek {
         }
 
         //Set starting snek pos
-        for (int i = 0; i < startSnekLength; i++) {
-            snakeArray[yDim /2][i+ this.snekPadding] = i+1;
+        if(startSnekLength + this.snekPadding*2 < xDim) {
+            for (int i = 0; i < startSnekLength; i++) {
+                snakeArray[yDim / 2][i + this.snekPadding] = i + 1;
+                snakeParts.add(new Vector2(i + this.snekPadding, yDim / 2));
+            }
+            //Set starting fruit pos
+            snakeArray[yDim/2][startSnekLength + snekPadding*2] = -1;
+            appleCoords = new Vector2(startSnekLength + snekPadding*2, yDim/2);
+
+
+            //Make the snekhead
+            snekHead = new Vector2( startSnekLength-1 + this.snekPadding, yDim/2);
+        } else {
+            for (int i = 0; i < 4; i++) {
+                snakeArray[yDim / 2][i + this.snekPadding] = i + 1;
+                snakeParts.add(new Vector2(i + this.snekPadding, yDim / 2));
+            }
+            //Set starting fruit pos
+            snakeArray[yDim/2][snekPadding*2 + 3 ] = -1;
+            appleCoords = new Vector2(snekPadding*2 + 3 , yDim/2);
+
+
+            //Make the snekhead
+            snekHead = new Vector2( snekPadding + 3, yDim/2);
         }
-        //Set starting fruit pos
-        snakeArray[yDim/2][startSnekLength + snekPadding*2] = -1;
-        appleCoords = new Vector2(startSnekLength + snekPadding*2, yDim/2);
 
 
-
-        //Make the snekhead
-        snekHead = new Vector2( startSnekLength-1 + this.snekPadding, yDim/2);
     }
 
     public void logInConsole() {
@@ -85,121 +102,119 @@ public class Snek {
     public void render(ShapeRenderer renderer) {
         renderer.begin(ShapeRenderer.ShapeType.Filled);
 
-        //Grid size
-        float gridSize = Math.min(800/xDim, 800/yDim);
+        float gridSize = Math.min(800f / xDim, 800f / yDim);
 
-        //Render snake
-        for (int x = 0; x < xDim; x++) {
-            for (int y = 0; y < yDim; y++) {
-                if(snakeArray[y][x] > 0) { //If snek
-                    //Check if head
-                    if(snakeArray[y][x] == snekLength) {
-                        //Set colour to dark green cause its the head
-                        renderer.setColor(0.25f, 0.65f, 0.25f, 1);
-                    } else {
-                        //set colour to green
-                        renderer.setColor(0.25f, 0.85f, 0.25f, 1);
-                    }
-                    renderer.rect(x*gridSize, y*gridSize, gridSize, gridSize);
-                } else if(snakeArray[y][x] < 0) { //If snek
-                    //set colour to red
-                    renderer.setColor(1,0,0,1);
-                    renderer.rect(x*gridSize, y*gridSize, gridSize, gridSize);
-                }
+        // Render snake body
+        for (Vector2 part : snakeParts) {
+            if (part.equals(snekHead)) {
+                renderer.setColor(0.25f, 0.65f, 0.25f, 1); // head
+            } else {
+                renderer.setColor(0.25f, 0.85f, 0.25f, 1); // body
             }
+            renderer.rect(part.x * gridSize, part.y * gridSize, gridSize, gridSize);
         }
 
+        // Render apple
+        renderer.setColor(1, 0, 0, 1);
+        if(appleCoords != null) {
+            renderer.rect(appleCoords.x * gridSize, appleCoords.y * gridSize, gridSize, gridSize);
+
+        }
 
         renderer.end();
     }
 
+
     public boolean update(float delta) {
         this.time += delta;
-        //If the snake is to update
-        if(this.time > 1/gameSpeed) {
-            movesSinceLastApple++;
+        if (this.time < 1 / gameSpeed) return true; // not time to move yet
+        this.time -= 1 / gameSpeed;
+        movesSinceLastApple++;
 
-            //update the snek
-            this.time -= 1/gameSpeed;
-
-
-
-            //Move head
-            switch (snekDir) {
-                case UP:
-                    this.snekHead = this.snekHead.add(0,1);
-                    break;
-                case DOWN:
-                    this.snekHead = this.snekHead.add(0,-1);
-                    break;
-                case LEFT:
-                    this.snekHead = this.snekHead.add(-1,0);
-                    break;
-                case RIGHT:
-                    this.snekHead = this.snekHead.add(1,0);
-                    break;
-            }
-            //Reset justAte
-            justAte = false;
-
-            //set the prevDir
-            prevDir = snekDir;
-            //Check if snek hit itself or went out of bounds
-            if(snekHead.y < 0 || snekHead.y >= yDim || snekHead.x < 0 || snekHead.x >= xDim) { //Went out of bounds
-//                System.out.println("Out of Bounds");
-                return false;
-            } else if(snakeArray[(int) snekHead.y][(int) snekHead.x] > 0) { //Hit itself
-//                System.out.println("Hit itself");
-                return false;
-            }
-
-            //Loop moving the snake forwards
-            for (int i = 0; i < xDim; i++) {
-                for (int j = 0; j < yDim; j++) {
-                    //Checks if the thing is a snek
-                    if (snakeArray[j][i] > 0  && snakeArray[(int) snekHead.y][(int) snekHead.x] != -1) {
-                        //Make shorter
-                        snakeArray[j][i] -= 1;
-                    }
-                }
-            }
-
-            //Check if snek ate apple
-            if(snakeArray[(int) snekHead.y][(int) snekHead.x] < 0) {
-                //Increase size
-                snekLength += 1;
-                //make new apple
-                makeApple();
-
-                justAte = true;
-            }
-
-            //Add the head as a thing now
-            snakeArray[(int) snekHead.y][(int) snekHead.x] = snekLength;
+        // Compute new head position
+        Vector2 newHead = new Vector2(snekHead);
+        switch (snekDir) {
+            case UP: newHead.y += 1; break;
+            case DOWN: newHead.y -= 1; break;
+            case LEFT: newHead.x -= 1; break;
+            case RIGHT: newHead.x += 1; break;
         }
 
-        return true;
+        prevDir = snekDir;
+        justAte = false;
 
+        // Check collisions
+        if (newHead.y < 0 || newHead.y >= yDim || newHead.x < 0 || newHead.x >= xDim) {
+            System.out.println("Out of Bounds");
+            return false;
+        } else if (snakeArray[(int)newHead.y][(int)newHead.x] > 1) {
+            System.out.println("Hit itself");
+            return false;
+        }
+
+        // Check apple
+        if (snakeArray[(int)newHead.y][(int)newHead.x] < 0) {
+            snekLength++;
+            makeApple();
+            justAte = true;
+            movesSinceLastApple = 0;
+        }
+        // Remove tail if no apple eaten
+        if(arrayCounting) {
+            if (!justAte && snakeParts.size() >= snekLength) {
+                for (Vector2 v : snakeParts) {
+                    snakeArray[(int) v.y][(int) v.x] -= 1;
+                }
+
+                Vector2 tail = snakeParts.removeFirst();
+                snakeArray[(int) tail.y][(int) tail.x] = 0;
+            }
+        } else {
+            if (!justAte && snakeParts.size() >= snekLength) {
+                Vector2 tail = snakeParts.removeFirst();
+                snakeArray[(int) tail.y][(int) tail.x] = 0;
+            }
+        }
+
+        // Add new head
+        snakeParts.addLast(newHead);
+        snakeArray[(int)newHead.y][(int)newHead.x] = snekLength;
+        snekHead = newHead;
+
+
+
+        return true;
     }
+
 
     public boolean isJustAte() {
         return justAte;
     }
 
     private void makeApple() {
+        List<Vector2> freeSpots = new ArrayList<>();
 
-        //Make 2 rand nums for x and y
-        int x, y;
+        // Collect all empty spots
+        for (int yy = 0; yy < yDim; yy++) {
+            for (int xx = 0; xx < xDim; xx++) {
+                if (snakeArray[yy][xx] == 0) {
+                    freeSpots.add(new Vector2(xx, yy));
+                }
+            }
+        }
 
-        //Checks if the apple can be placed there, otherwise it calls itself again
-        do {
-            x = random.nextInt(xDim);
-            y = random.nextInt(yDim);
-        } while(snakeArray[y][x] != 0);
+        // If no free spots, don't spawn apple
+        if (freeSpots.isEmpty()) {
+            appleCoords = null; // or leave as is
+            return;
+        }
 
-        snakeArray[y][x] = -1;
-        appleCoords = new Vector2(x, y);
+        // Pick a random empty spot
+        Vector2 chosen = freeSpots.get(random.nextInt(freeSpots.size()));
+        snakeArray[(int) chosen.y][(int) chosen.x] = -1;
+        appleCoords = chosen;
     }
+
 
     public Vector2 getAppleCoords() {
         return appleCoords;

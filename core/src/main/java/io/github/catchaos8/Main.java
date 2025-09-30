@@ -8,10 +8,10 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.utils.ScreenUtils;
 
-import java.util.Arrays;
-
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class Main extends ApplicationAdapter {
+    private float time;
+
     SnekComputing computer;
 
     private int movesSinceLastApple;
@@ -25,11 +25,14 @@ public class Main extends ApplicationAdapter {
     //Snek object
     Snek snek;
 
-    final int XDIM = 19;
-    final int YDIM = 19; //Must be more than sneklength+snekPadding
-    final int SNEKLENGTH = 3; //Starting length
+    final boolean ARRAYCOUNTING = false; //If true, the render array will have the amount of moves left until the part disappears
+    //^Faster on large boards if it is false
+    final int XDIM = 396; //Must be more than 3+snekPadding*2
+    final int YDIM = 396;
+    final int SNEKLENGTH = 5270; //Starting length
     final int SNEKPADDING = 3; //padding from the side
-    final float GAMESPEED = 99999;
+    final float GAMESPEED = 2500;
+    final float VISUALFPS = 30; //Capping ur visual fps really helps with the game spead on higher snake sizes
 
 
     boolean isAlive = true;
@@ -37,24 +40,31 @@ public class Main extends ApplicationAdapter {
 
     @Override
     public void create() {
+        time = 0;
+
         if(GAMESPEED > Gdx.graphics.getDisplayMode().refreshRate) {
             Gdx.graphics.setVSync(false);
         }
 
         movesSinceLastApple = 0;
+
         snek = new Snek(XDIM, YDIM, SNEKLENGTH, SNEKPADDING,GAMESPEED);
+        snek.arrayCounting = ARRAYCOUNTING;
+
         batch = new SpriteBatch();
         shapeRenderer = new ShapeRenderer();
 
         font = new BitmapFont();
 
-        computer = new SnekComputing();
+        computer = new SnekComputing(snek);
+
+
     }
 
     @Override
     public void render() {
+        time += Gdx.graphics.getDeltaTime();
 
-        ScreenUtils.clear(0f, 0f, 0f, 1f);
         //Check if u have a new high score
         if(snek.getSnekLength() > highscore) {
             highscore = snek.getSnekLength();
@@ -76,13 +86,13 @@ public class Main extends ApplicationAdapter {
                 snek = new Snek(XDIM, YDIM, SNEKLENGTH, SNEKPADDING, GAMESPEED);
                 isAlive = true;
             }
-            if(snek.isJustAte()) {
-                movesSinceLastApple = 0;
-            }
-
         }
         //Render snek
-        snek.render(shapeRenderer);
+        if(time > 1 /VISUALFPS) {
+            time -= 1/VISUALFPS;
+            ScreenUtils.clear(0,0,0,1);
+            snek.render(shapeRenderer);
+        }
 
         //Render attempts + snek length
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
