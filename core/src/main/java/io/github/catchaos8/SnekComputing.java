@@ -1,9 +1,5 @@
 package io.github.catchaos8;
 
-import com.badlogic.gdx.math.Vector2;
-
-import java.util.*;
-
 public class SnekComputing {
     //You can store variables here
     Snek snek;
@@ -83,10 +79,10 @@ public class SnekComputing {
             }
         }
 
-        //Display for debug
-        for (int i = 0; i < snek.getyDim(); i++) {
-            System.out.println(Arrays.toString(s[i]));
-        }
+//        //Display for debug
+//        for (int i = 0; i < snek.getyDim(); i++) {
+//            System.out.println(Arrays.toString(s[i]));
+//        }
 
     }
 

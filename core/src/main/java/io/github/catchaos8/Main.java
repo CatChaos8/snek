@@ -10,9 +10,14 @@ import com.badlogic.gdx.utils.ScreenUtils;
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class Main extends ApplicationAdapter {
+
+
     private float time;
 
+
     SnekComputing computer;
+    SnekComputingOld oldComputer;
+    final boolean useOld = true;
 
     private int movesSinceLastApple;
 
@@ -27,12 +32,12 @@ public class Main extends ApplicationAdapter {
 
     final boolean ARRAYCOUNTING = false; //If true, the render array will have the amount of moves left until the part disappears
     //^Faster on large boards if it is false
-    final int XDIM = 396; //Must be more than 3+snekPadding*2
-    final int YDIM = 396;
-    final int SNEKLENGTH = 5270; //Starting length
+    final int XDIM = 25; //Must be more than 3+snekPadding*2
+    final int YDIM = 25;
+    final int SNEKLENGTH = 3; //Starting length
     final int SNEKPADDING = 3; //padding from the side
-    final float GAMESPEED = 2500;
-    final float VISUALFPS = 30; //Capping ur visual fps really helps with the game spead on higher snake sizes
+    final float GAMESPEED = 125;
+    final float VISUALFPS = 125; //Capping ur visual fps really helps with the game spead on higher snake sizes
 
 
     boolean isAlive = true;
@@ -57,7 +62,7 @@ public class Main extends ApplicationAdapter {
         font = new BitmapFont();
 
         computer = new SnekComputing(snek);
-
+        oldComputer = new SnekComputingOld();
 
     }
 
@@ -78,7 +83,11 @@ public class Main extends ApplicationAdapter {
 
                 movesSinceLastApple = snek.getMovesSinceLastApple();
 
-                snek = computer.computeSnek(snek);
+                if(useOld) {
+                    snek = oldComputer.computeSnek(snek);
+                } else {
+                    snek = computer.computeSnek(snek);
+                }
             } else {
 
                 movesSinceLastApple = 0;
@@ -87,31 +96,36 @@ public class Main extends ApplicationAdapter {
                 isAlive = true;
             }
         }
-        //Render snek
         if(time > 1 /VISUALFPS) {
+            //Render snek
             time -= 1/VISUALFPS;
             ScreenUtils.clear(0,0,0,1);
             snek.render(shapeRenderer);
+
+            //Render attempts + snek length
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+            //Set colour to gray
+            shapeRenderer.setColor(0.25f,0.25f,0.25f,1);
+            //Draw the rect
+            shapeRenderer.rect(0,800,800,100);
+            //End renderer to draw the text for stuff
+            shapeRenderer.end();
+
+            //Set font size
+            font.getData().setScale(2);
+            // Draw text (using batch)
+            batch.begin();
+            //Draw highscore + others
+            font.draw(batch, "Highscore: " + highscore, 10, 850);     // bottom-left aligned
+            font.draw(batch, "Length: " + snek.getSnekLength(), 800/3f, 850);
+            font.draw(batch, "Attempts: " + attempts, 800/3f*2, 850);
+
+
+            batch.end();
+
         }
 
-        //Render attempts + snek length
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        //Set colour to gray
-        shapeRenderer.setColor(0.25f,0.25f,0.25f,1);
-        //Draw the rect
-        shapeRenderer.rect(0,800,800,100);
-        //End renderer to draw the text for stuff
-        shapeRenderer.end();
 
-        //Set font size
-        font.getData().setScale(2);
-        // Draw text (using batch)
-        batch.begin();
-        //Draw highscore + others
-        font.draw(batch, "Highscore: " + highscore, 10, 850);     // bottom-left aligned
-        font.draw(batch, "Length: " + snek.getSnekLength(), 800/3f, 850);
-        font.draw(batch, "Attempts: " + attempts, 800/3f*2, 850);
-        batch.end();
 
 
 

@@ -6,6 +6,7 @@ import com.badlogic.gdx.math.Vector2;
 import java.util.*;
 
 public class Snek {
+
     Deque<Vector2> snakeParts = new LinkedList<>();
 
     public boolean arrayCounting = false;
@@ -67,27 +68,27 @@ public class Snek {
         if(startSnekLength + this.snekPadding*2 < xDim) {
             for (int i = 0; i < startSnekLength; i++) {
                 snakeArray[yDim / 2][i + this.snekPadding] = i + 1;
-                snakeParts.add(new Vector2(i + this.snekPadding, yDim / 2));
+                snakeParts.add(new Vector2(i + this.snekPadding, (float) yDim / 2));
             }
             //Set starting fruit pos
             snakeArray[yDim/2][startSnekLength + snekPadding*2] = -1;
-            appleCoords = new Vector2(startSnekLength + snekPadding*2, yDim/2);
+            appleCoords = new Vector2(startSnekLength + snekPadding*2, (float) yDim /2);
 
 
             //Make the snekhead
-            snekHead = new Vector2( startSnekLength-1 + this.snekPadding, yDim/2);
+            snekHead = new Vector2( startSnekLength-1 + this.snekPadding, (float) yDim/2);
         } else {
             for (int i = 0; i < 4; i++) {
                 snakeArray[yDim / 2][i + this.snekPadding] = i + 1;
-                snakeParts.add(new Vector2(i + this.snekPadding, yDim / 2));
+                snakeParts.add(new Vector2(i + this.snekPadding, (float) yDim / 2));
             }
             //Set starting fruit pos
             snakeArray[yDim/2][snekPadding*2 + 3 ] = -1;
-            appleCoords = new Vector2(snekPadding*2 + 3 , yDim/2);
+            appleCoords = new Vector2(snekPadding*2 + 3 , (float) yDim/2);
 
 
             //Make the snekhead
-            snekHead = new Vector2( snekPadding + 3, yDim/2);
+            snekHead = new Vector2( snekPadding + 3, (float) yDim/2);
         }
 
 
@@ -102,7 +103,8 @@ public class Snek {
     public void render(ShapeRenderer renderer) {
         renderer.begin(ShapeRenderer.ShapeType.Filled);
 
-        float gridSize = Math.min(800f / xDim, 800f / yDim);
+        float xSize = 800f / xDim;
+        float ySize = 800f / yDim;
 
         // Render snake body
         for (Vector2 part : snakeParts) {
@@ -111,13 +113,13 @@ public class Snek {
             } else {
                 renderer.setColor(0.25f, 0.85f, 0.25f, 1); // body
             }
-            renderer.rect(part.x * gridSize, part.y * gridSize, gridSize, gridSize);
+            renderer.rect(part.x * xSize, part.y * ySize, xSize, ySize);
         }
 
         // Render apple
         renderer.setColor(1, 0, 0, 1);
         if(appleCoords != null) {
-            renderer.rect(appleCoords.x * gridSize, appleCoords.y * gridSize, gridSize, gridSize);
+            renderer.rect(appleCoords.x * xSize, appleCoords.y * ySize, xSize, ySize);
 
         }
 
@@ -154,10 +156,22 @@ public class Snek {
 
         // Check apple
         if (snakeArray[(int)newHead.y][(int)newHead.x] < 0) {
+//            applesAte += 1;
+//            System.out.println(movesSinceLastApple);
+//            movesSinceLastAppleTotal +=movesSinceLastApple;
+//
+//            System.out.println("Ate Apple!");
+//            System.out.println(Gdx.graphics.getFramesPerSecond());
+//
+//            float counter = (float) movesSinceLastAppleTotal /applesAte;
+//            System.out.println("Average: " + counter);
+
+
             snekLength++;
             makeApple();
             justAte = true;
             movesSinceLastApple = 0;
+
         }
         // Remove tail if no apple eaten
         if(arrayCounting) {
@@ -171,9 +185,12 @@ public class Snek {
             }
         } else {
             if (!justAte && snakeParts.size() >= snekLength) {
+                //Delete the tail in the deque and get it as a var
                 Vector2 tail = snakeParts.removeFirst();
+                //Set it to empty in the array
                 snakeArray[(int) tail.y][(int) tail.x] = 0;
             }
+
         }
 
         // Add new head

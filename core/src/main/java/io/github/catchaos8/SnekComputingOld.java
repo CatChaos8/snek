@@ -110,7 +110,10 @@ public class SnekComputingOld {
                 if (!inBounds(nx, ny, grid)) continue;
                 if (grid[ny][nx] > 0 && grid[ny][nx] > current.g + 1) continue; // snake body is obstacle
 
-                double newCost = current.g + 1;
+                double wallBias = getWallBias(nx, ny, grid);
+                double bodyBias = getBodyBias(nx, ny, grid);
+                double newCost = current.g + 1 - wallBias - bodyBias;
+
                 String k = key(nx, ny);
 
                 if (!costSoFar.containsKey(k) || newCost < costSoFar.get(k)) {
@@ -124,45 +127,39 @@ public class SnekComputingOld {
 
         return Collections.emptyList(); // no path found
     }
+    private double getBodyBias(int x, int y, int[][] grid) {
+        // Check if adjacent to the snake body (not including the current tile)
+        for (int dy = -1; dy <= 1; dy++) {
+            for (int dx = -1; dx <= 1; dx++) {
+                if (dx == 0 && dy == 0) continue;
 
-    private List<Node> aNotAStar(int[][] grid, int startX, int startY, int goalX, int goalY) {
-        //Basically make a list of things to go to
-        PriorityQueue<Node> open = new PriorityQueue<>(Comparator.comparingDouble(Node::f));
-        //Cost of the movement so far
-        Map<String, Double> costSoFar = new HashMap<>();
+                int nx = x + dx;
+                int ny = y + dy;
 
-        Node start = new Node(startX, startY, 0, heuristic(startX, startY, goalX, goalY), null);
-        open.add(start);
-        costSoFar.put(key(startX, startY), 0.0);
+                if (ny < 0 || ny >= grid.length || nx < 0 || nx >= grid[0].length)
+                    continue;
 
-        while (!open.isEmpty()) {
-            Node current = open.poll();
-
-            if (current.x == goalX && current.y == goalY) {
-                return reconstructPath(current);
-            }
-
-            for (int[] d : DIRECTIONS) {
-                int nx = current.x + d[0];
-                int ny = current.y + d[1];
-
-                if (!inBounds(nx, ny, grid)) continue;
-                if (grid[ny][nx] > 0) continue; // snake body is obstacle
-
-                double newCost = current.g + 1;
-                String k = key(nx, ny);
-
-                if (!costSoFar.containsKey(k) || newCost > costSoFar.get(k)) {
-                    costSoFar.put(k, newCost);
-                    Node neighbor = new Node(nx, ny, newCost,
-                        heuristic(nx, ny, goalX, goalY), current);
-                    open.add(neighbor);
+                if (grid[ny][nx] > 0) {
+                    return 0.75; // touching the snake body
                 }
             }
         }
-
-        return Collections.emptyList(); // no path found
+        return 0.0;
     }
+
+
+    private double getWallBias(int x, int y, int[][] grid) {
+        int width = grid[0].length;
+        int height = grid.length;
+
+        // If touching any wall, return 0.5 bias
+        if (x == 0 || y == 0 || x == width - 1 || y == height - 1) {
+            return 0.25;
+        }
+        return 0.0;
+    }
+
+
 
     private boolean inBounds(int x, int y, int[][] grid) { //Checks if the snake is in bounds or something
         return y >= 0 && y < grid.length && x >= 0 && x < grid[0].length;
